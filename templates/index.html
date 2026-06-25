@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم تقسیم هوشمند قبض | ورود و ثبت‌نام</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body class="login-page">
+
+    <!-- ============================================ -->
+    <!-- TEST BUTTONS (Quick Login for Demo) -->
+    <!-- ============================================ -->
+    <div class="test-buttons">
+        <button class="test-btn housemate" onclick="quickTest('mehdi', '1234')">👤 مهدی</button>
+        <button class="test-btn manager" onclick="quickTest('daniyal', '1234')">👑 دانیال</button>
+        <button class="test-btn admin" onclick="quickTest('admin', 'admin')">⭐ ادمین</button>
+        <span class="test-btn note">📝 فقط برای تست</span>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- LOGIN CONTAINER -->
+    <!-- ============================================ -->
+    <div class="login-container">
+        <div class="login-card">
+
+            <!-- Header -->
+            <div class="login-header">
+                <h1>🏠 سیستم تقسیم هوشمند قبض</h1>
+                <p>تقسیم خودکار و منصفانه قبوض بین همخانه‌ ها</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="login-tabs">
+                <button class="login-tab active" onclick="switchAuthTab('login')">ورود</button>
+                <button class="login-tab" onclick="switchAuthTab('register')">ثبت‌نام</button>
+            </div>
+
+            <div class="form-container">
+
+                <!-- ============================================ -->
+                <!-- LOGIN FORM -->
+                <!-- ============================================ -->
+                <div id="loginTab" class="form active">
+                    <form id="loginForm" onsubmit="return false;">
+                        <div class="form-group">
+                            <label>نام کاربری <span class="required">*</span></label>
+                            <input type="text" id="loginUsername" placeholder="نام کاربری خود را وارد کنید">
+                            <div class="info-text">مثال: mehdi</div>
+                        </div>
+                        <div class="form-group">
+                            <label>رمز عبور <span class="required">*</span></label>
+                            <input type="password" id="loginPassword" placeholder="********">
+                        </div>
+                        <button type="button" class="btn-primary" onclick="doLogin()">ورود</button>
+                    </form>
+                    <div id="loginMessage" class="message"></div>
+                    <div class="forgot-link">
+                        <button class="btn-secondary" onclick="showForgotPassword()">
+                            🔑 فراموشی رمز عبور
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ============================================ -->
+                <!-- REGISTER FORM -->
+                <!-- ============================================ -->
+                <div id="registerTab" class="form">
+                    <form id="registerForm" onsubmit="return false;">
+                        <div class="form-group">
+                            <label>نام کاربری (انگلیسی) <span class="required">*</span></label>
+                            <input type="text" id="regUsername" placeholder="مثال: mehdi">
+                            <div class="info-text">فقط حروف انگلیسی و اعداد، بدون فاصله</div>
+                        </div>
+                        <div class="form-group">
+                            <label>نام کامل <span class="required">*</span></label>
+                            <input type="text" id="regFullName" placeholder="مثال: مهدی علیزاده">
+                        </div>
+                        <div class="form-group">
+                            <label>شماره موبایل <span class="required">*</span></label>
+                            <input type="tel" id="regPhone" placeholder="مثال: 9337715812" maxlength="10" oninput="cleanPhoneNumber(this)">
+                            <div class="info-text">۱۰ رقم، بدون صفر ابتدا</div>
+                        </div>
+                        <div class="form-group">
+                            <label>ایمیل</label>
+                            <input type="email" id="regEmail" placeholder="example@email.com">
+                            <div class="info-text">اختیاری</div>
+                        </div>
+                        <div class="form-group">
+                            <label>کد خانه</label>
+                            <input type="text" id="regHouseCode" placeholder="اگر کد خانه را دارید وارد کنید">
+                            <div class="info-text">در صورت نداشتن کد، خانه جدید برای شما ساخته می‌شود</div>
+                        </div>
+                        <div class="form-group">
+                            <label>نقش شما <span class="required">*</span></label>
+                            <div class="role-options">
+                                <label class="role-option">
+                                    <input type="radio" name="role" value="regular" checked>
+                                    <span>👤 مستاجر معمولی</span>
+                                </label>
+                                <label class="role-option">
+                                    <input type="radio" name="role" value="house_manager">
+                                    <span>👑 مدیر خانه</span>
+                                </label>
+                                <label class="role-option">
+                                    <input type="radio" name="role" value="housemate_manager">
+                                    <span>👑 مستاجر + مدیر خانه</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>رمز عبور <span class="required">*</span></label>
+                            <input type="password" id="regPassword" placeholder="حداقل ۴ کاراکتر" minlength="4">
+                        </div>
+                        <div class="form-group">
+                            <label>تکرار رمز عبور <span class="required">*</span></label>
+                            <input type="password" id="regPasswordConfirm" placeholder="رمز را دوباره وارد کنید">
+                        </div>
+                        <button type="button" class="btn-primary" onclick="doRegister()">ثبت‌نام</button>
+                    </form>
+                    <div id="registerMessage" class="message"></div>
+                </div>
+
+                <!-- Demo Credentials -->
+                <div class="demo-credentials">
+                    <p>📌 <strong>حساب‌های تست:</strong></p>
+                    <p>• ادمین: username=<strong>admin</strong> / pass=<strong>admin</strong></p>
+                    <p>• مدیر خانه: username=<strong>daniyal</strong> / pass=<strong>1234</strong></p>
+                    <p>• مستاجر + مدیر: username=<strong>mehdi</strong> / pass=<strong>1234</strong></p>
+                    <p>• مستاجر معمولی: username=<strong>asma</strong> / pass=<strong>1234</strong></p>
+                </div>
+
+            </div><!-- /form-container -->
+        </div><!-- /login-card -->
+    </div><!-- /login-container -->
+
+    <!-- ============================================ -->
+    <!-- FORGOT PASSWORD MODAL -->
+    <!-- ============================================ -->
+    <div id="forgotModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔑 فراموشی رمز عبور</h3>
+                <button class="close-modal" onclick="closeForgotModal()">&times;</button>
+            </div>
+            <div id="forgotStep1">
+                <div class="form-group">
+                    <label>شماره موبایل <span class="required">*</span></label>
+                    <input type="tel" id="forgotPhone" placeholder="مثال: 9337715812" maxlength="10" oninput="cleanPhoneNumber(this)">
+                    <div class="info-text">شماره موبایل ثبت‌شده خود را وارد کنید</div>
+                </div>
+                <button class="btn-primary" onclick="sendResetCode()">ارسال کد</button>
+            </div>
+            <div id="forgotStep2" style="display: none;">
+                <div class="form-group">
+                    <label>کد تأیید <span class="required">*</span></label>
+                    <input type="text" id="forgotCode" placeholder="کد ۵ رقمی" maxlength="5">
+                    <div class="info-text">کد تست: 12345</div>
+                </div>
+                <button class="btn-primary" onclick="verifyResetCode()">تأیید کد</button>
+            </div>
+            <div id="forgotStep3" style="display: none;">
+                <div class="form-group">
+                    <label>رمز عبور جدید <span class="required">*</span></label>
+                    <input type="password" id="newPassword" placeholder="حداقل ۴ کاراکتر" minlength="4">
+                </div>
+                <div class="form-group">
+                    <label>تکرار رمز عبور جدید <span class="required">*</span></label>
+                    <input type="password" id="newPasswordConfirm" placeholder="رمز را دوباره وارد کنید">
+                </div>
+                <button class="btn-primary" onclick="resetPassword()">تغییر رمز عبور</button>
+            </div>
+            <div id="forgotMessage" class="message"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

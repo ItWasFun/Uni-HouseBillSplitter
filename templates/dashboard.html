@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد | سیستم تقسیم هوشمند قبض</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+<body>
+
+    <!-- ============================================ -->
+    <!-- HEADER -->
+    <!-- ============================================ -->
+    <div class="header">
+        <h1>🏠 سیستم تقسیم هوشمند قبض</h1>
+        <div class="user-info">
+            <span class="user-badge" id="userNameDisplay">{{ user_name or 'کاربر' }}</span>
+            <span class="user-badge apartment-code" id="roleDisplay">
+                {% if is_admin %}⭐ ادمین
+                {% elif is_house_manager %}👑 مدیر خانه
+                {% elif is_housemate_manager %}👑 مستاجر + مدیر
+                {% else %}👤 مستاجر
+                {% endif %}
+            </span>
+            <button class="theme-toggle" onclick="toggleDarkMode()">🌙</button>
+            <button class="logout-btn" onclick="logout()">خروج</button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================ -->
+    <div class="container">
+
+        <!-- Debt Summary Card -->
+        <div class="debt-card" id="debtCard">
+            <div>
+                <div style="font-size: 14px; opacity: 0.9;">مجموع بدهی شما</div>
+                <div class="debt-amount" id="totalDebt">0 تومان</div>
+                <div style="font-size: 15px; opacity: 0.9;" id="debtDetail"></div>
+            </div>
+            <div class="debt-status" id="debtStatus">در حال محاسبه...</div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TABS -->
+        <!-- ============================================ -->
+        <div class="tabs" id="tabsContainer">
+            <button class="tab-btn active" data-tab="bills" onclick="switchTab('bills')">🧾 قبوض</button>
+            <button class="tab-btn" data-tab="attendance" onclick="switchTab('attendance')">📅 حضور من</button>
+            <button class="tab-btn" data-tab="housemates" onclick="switchTab('housemates')">👥 همخانه‌ ها</button>
+            <button class="tab-btn" data-tab="payments" onclick="switchTab('payments')">💰 پرداخت‌ ها</button>
+            <button class="tab-btn" data-tab="debt" onclick="switchTab('debt')">📊 بدهی</button>
+            <button class="tab-btn" data-tab="receipts" onclick="switchTab('receipts')">📄 رسید</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 1: BILLS -->
+        <!-- ============================================ -->
+        <div id="panel-bills" class="panel active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                    <h3 style="margin: 0; border-right: 4px solid var(--gradient-start); padding-right: 14px;">🧾 لیست قبوض</h3>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="font-size: 14px; color: var(--text-secondary); font-weight: 500;">دوره قبض:</label>
+                        <select id="billMonthFilter" onchange="loadBills()" style="padding: 8px 14px; border-radius: 10px; border: 2px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; cursor: pointer; min-width: 140px;">
+                            <option value="all">کل دوره</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="billsList">در حال بارگذاری...</div>
+            </div>
+
+            <!-- Add Bill Form (Only for Managers) -->
+            {% if is_house_manager or is_housemate_manager or is_admin %}
+            <div class="card">
+                <h3>➕ ثبت قبض جدید</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نوع قبض</label>
+                        <select id="newUtilityType">
+                            <option value="rent">🏠 اجاره</option>
+                            <option value="electricity">🔌 برق</option>
+                            <option value="water">💧 آب</option>
+                            <option value="gas">🔥 گاز</option>
+                            <option value="internet">🌐 اینترنت</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>مبلغ (تومان)</label>
+                        <input type="number" id="newBillAmount" placeholder="مبلغ">
+                    </div>
+                    <div class="form-group">
+                        <label>تاریخ قبض</label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="newBillYear" style="flex: 1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                                <!-- Years populated by JavaScript -->
+                            </select>
+                            <select id="newBillMonth" style="flex: 1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                                <option value="1">فروردین</option>
+                                <option value="2">اردیبهشت</option>
+                                <option value="3">خرداد</option>
+                                <option value="4">تیر</option>
+                                <option value="5">مرداد</option>
+                                <option value="6">شهریور</option>
+                                <option value="7">مهر</option>
+                                <option value="8">آبان</option>
+                                <option value="9">آذر</option>
+                                <option value="10">دی</option>
+                                <option value="11">بهمن</option>
+                                <option value="12">اسفند</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>روش تقسیم</label>
+                        <select id="newDivisionMethod">
+                            <option value="equal">مساوی</option>
+                            <option value="area">متراژ</option>
+                            <option value="presence">حضور</option>
+                            <option value="combined">ترکیبی (متراژ × حضور)</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="addBill()">ثبت قبض</button>
+                <div id="addBillMessage" class="message"></div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 2: ATTENDANCE (Coming Soon) -->
+        <!-- ============================================ -->
+        <div id="panel-attendance" class="panel">
+            <div class="card">
+                <h3>📅 حضور من</h3>
+                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 3: HOUSEMATES (Coming Soon) -->
+        <!-- ============================================ -->
+        <div id="panel-housemates" class="panel">
+            <div class="card">
+                <h3>👥 همخانه‌ ها</h3>
+                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 4: PAYMENTS (Coming Soon) -->
+        <!-- ============================================ -->
+        <div id="panel-payments" class="panel">
+            <div class="card">
+                <h3>💰 پرداخت‌ ها</h3>
+                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 5: DEBT (Coming Soon) -->
+        <!-- ============================================ -->
+        <div id="panel-debt" class="panel">
+            <div class="card">
+                <h3>📊 بدهی</h3>
+                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+            </div>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- TAB 6: RECEIPTS (Coming Soon) -->
+        <!-- ============================================ -->
+        <div id="panel-receipts" class="panel">
+            <div class="card">
+                <h3>📄 رسید</h3>
+                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- ============================================ -->
+    <!-- SCRIPTS -->
+    <!-- ============================================ -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>

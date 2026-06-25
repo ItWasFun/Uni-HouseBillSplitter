@@ -1,0 +1,556 @@
+/* ============================================
+   SHABNAM FONT WITH FARSI DIGITS (Local)
+   ============================================ */
+
+/* === Regular === */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('/static/fonts/Farsi-Digits/Shabnam-FD.eot');
+    src: url('/static/fonts/Farsi-Digits/Shabnam-FD.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/Farsi-Digits/Shabnam-FD.woff2') format('woff2'),
+         url('/static/fonts/Farsi-Digits/Shabnam-FD.woff') format('woff'),
+         url('/static/fonts/Farsi-Digits/Shabnam-FD.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* === Bold === */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Bold-FD.eot');
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Bold-FD.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Bold-FD.woff2') format('woff2'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Bold-FD.woff') format('woff'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Bold-FD.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* === Light === */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Light-FD.eot');
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Light-FD.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Light-FD.woff2') format('woff2'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Light-FD.woff') format('woff'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Light-FD.ttf') format('truetype');
+    font-weight: 300;
+    font-style: normal;
+}
+
+/* === Medium === */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Medium-FD.eot');
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Medium-FD.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Medium-FD.woff2') format('woff2'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Medium-FD.woff') format('woff'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Medium-FD.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+}
+
+/* === Thin === */
+@font-face {
+    font-family: 'Shabnam';
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Thin-FD.eot');
+    src: url('/static/fonts/Farsi-Digits/Shabnam-Thin-FD.eot?#iefix') format('embedded-opentype'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Thin-FD.woff2') format('woff2'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Thin-FD.woff') format('woff'),
+         url('/static/fonts/Farsi-Digits/Shabnam-Thin-FD.ttf') format('truetype');
+    font-weight: 100;
+    font-style: normal;
+}
+
+/* ============================================
+   CSS VARIABLES - NEW PALETTE
+   ============================================ */
+
+/* LIGHT MODE (Default) */
+:root {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-header: #ffffff;
+    --text-primary: #1a2a3a;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --border-color: #e2e8f0;
+    --border-light: #edf2f7;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+    --gradient-start: #667eea;
+    --gradient-end: #764ba2;
+    --success: #48bb78;
+    --success-light: #c6f6d5;
+    --danger: #f56565;
+    --danger-light: #fed7d7;
+    --warning: #ed8936;
+    --warning-light: #feebc8;
+    --info: #4299e1;
+    --info-light: #bee3f8;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+     /* ... existing variables ... */
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --card-shadow-hover: 0 8px 30px rgba(0,0,0,0.08);
+    --table-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+/* DARK MODE - New Palette */
+body.dark-mode {
+    --bg-primary: #0F111E;
+    --bg-secondary: #150F1F;
+    --bg-card: #150F1F;
+    --bg-header: #0F111E;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b8c5;
+    --text-muted: #8b949e;
+    --border-color: #252E65;
+    --border-light: #1a1f3a;
+    --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+    --gradient-start: #434B84;
+    --gradient-end: #252E65;
+    --success: #48bb78;
+    --success-light: #1a3a2a;
+    --danger: #f56565;
+    --danger-light: #3a1a1a;
+    --warning: #ed8936;
+    --warning-light: #3a2a1a;
+    --info: #4299e1;
+    --info-light: #1a2a4a;
+    --card-shadow: 0 2px 12px rgba(0,0,0,0.3);
+}
+
+/* ============================================
+   GLOBAL RESET
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', 'Roboto', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    direction: rtl;
+    transition: background 0.3s ease, color 0.3s ease;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+/* ============================================
+   SHARED COMPONENTS
+   ============================================ */
+
+/* Buttons */
+.btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', sans-serif;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(67, 75, 132, 0.3);
+}
+
+.btn-secondary {
+    padding: 10px 20px;
+    background: transparent;
+    color: var(--gradient-start);
+    border: none;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', sans-serif;
+}
+.btn-secondary:hover {
+    background: rgba(102, 126, 234, 0.1);
+    text-decoration: underline;
+}
+
+/* Messages */
+.message {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+}
+.message.error {
+    background: var(--danger-light);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    display: block;
+}
+.message.success {
+    background: var(--success-light);
+    color: var(--success);
+    border: 1px solid var(--success);
+    display: block;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+.modal.active {
+    display: flex;
+}
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 28px 30px;
+    max-width: 420px;
+    width: 90%;
+    box-shadow: var(--shadow-lg);
+    animation: modalFadeIn 0.3s ease;
+    border: 1px solid var(--border-color);
+}
+@keyframes modalFadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.modal-header h3 {
+    color: var(--text-primary);
+}
+.close-modal {
+    background: none;
+    color: var(--text-muted);
+    font-size: 28px;
+    cursor: pointer;
+    padding: 0;
+    border: none;
+}
+.close-modal:hover { color: var(--text-primary); }
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 18px;
+    width: 100%;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+    text-align: right;
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', sans-serif;
+}
+.form-group label .required {
+    color: #e74c3c;
+    margin-right: 3px;
+}
+.form-group input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    text-align: right;
+    direction: rtl;
+    transition: all 0.3s ease;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: var(--gradient-start);
+    box-shadow: 0 0 0 3px rgba(67, 75, 132, 0.15);
+}
+.form-group input::placeholder {
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: right;
+}
+.info-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 5px;
+    text-align: right;
+    font-family: 'Shabnam', 'Tahoma', 'Segoe UI', sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gradient-start);
+}
+
+/* Tabs (Shared) */
+.tabs {
+    display: flex;
+    gap: 8px;
+    background: var(--bg-secondary);
+    padding: 8px 12px;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Shabnam', 'Tahoma', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.tab-btn:hover:not(.active) {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Cards */
+.card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.card h3 {
+    margin-bottom: 20px;
+    color: var(--text-primary);
+    border-right: 4px solid var(--gradient-start);
+    padding-right: 14px;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+    border-radius: 12px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    padding: 12px 16px;
+    text-align: right;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+td {
+    padding: 12px 16px;
+    text-align: right;
+    color: var(--text-secondary);
+    font-size: 14px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+tr:hover td {
+    background: var(--bg-primary);
+}
+
+/* Debt Card */
+.debt-card {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    padding: 24px 28px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    box-shadow: var(--shadow-lg);
+}
+
+.debt-amount {
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.debt-status {
+    padding: 10px 24px;
+    border-radius: 40px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.debt-status.paid {
+    background: var(--success);
+}
+
+.debt-status.unpaid {
+    background: var(--danger);
+}
+
+/* Forms */
+.form-row {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 160px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-family: 'Shabnam', 'Tahoma', sans-serif;
+    font-size: 14px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--gradient-start);
+    box-shadow: 0 0 0 3px rgba(67, 75, 132, 0.15);
+}
+
+/* Buttons (Dashboard) */
+button:not(.tab-btn):not(.login-tab):not(.test-btn):not(.theme-toggle):not(.logout-btn):not(.close-modal):not(.btn-secondary) {
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    color: white;
+    border: none;
+    padding: 12px 28px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Shabnam', 'Tahoma', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+button:not(.tab-btn):not(.login-tab):not(.test-btn):not(.theme-toggle):not(.logout-btn):not(.close-modal):not(.btn-secondary):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .container {
+        padding: 16px;
+    }
+
+    .debt-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .debt-amount {
+        font-size: 24px;
+    }
+
+    .tab-btn {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .form-group {
+        min-width: 100%;
+    }
+
+    .card {
+        padding: 16px;
+    }
+
+    th,
+    td {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    button:not(.tab-btn):not(.login-tab):not(.test-btn):not(.theme-toggle):not(.logout-btn):not(.close-modal):not(.btn-secondary) {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modal-content {
+        padding: 20px;
+    }
+}

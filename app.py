@@ -10,59 +10,12 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this-in-production'
 
 # ============================================
-# PERSIAN DATE HELPER FUNCTIONS
-# ============================================
-
-def persian_month_number(month_name):
-    """Convert Persian month name to number (1-12)"""
-    months = {
-        'فروردین': 1, 'اردیبهشت': 2, 'خرداد': 3, 'تیر': 4,
-        'مرداد': 5, 'شهریور': 6, 'مهر': 7, 'آبان': 8,
-        'آذر': 9, 'دی': 10, 'بهمن': 11, 'اسفند': 12
-    }
-    return months.get(month_name, 1)
-
-def persian_month_name(month_num):
-    """Convert month number to Persian name"""
-    months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
-              'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند']
-    return months[month_num - 1] if 1 <= month_num <= 12 else ''
-
-def persian_to_gregorian(persian_year, persian_month, persian_day):
-    """
-    Convert Persian date to Gregorian date string (YYYY-MM-DD)
-    Simplified version - for demo purposes
-    """
-    import jdatetime
-    try:
-        gregorian = jdatetime.date(persian_year, persian_month, persian_day).togregorian()
-        return gregorian.strftime('%Y-%m-%d')
-    except:
-        # Fallback: approximate conversion
-        return f"{persian_year + 621}-{str(persian_month).zfill(2)}-{str(persian_day).zfill(2)}"
-
-def gregorian_to_persian(gregorian_date):
-    """Convert Gregorian date string to Persian date tuple (year, month_name, day)"""
-    import jdatetime
-    try:
-        date_obj = datetime.strptime(gregorian_date, '%Y-%m-%d')
-        persian = jdatetime.date.fromgregorian(date=date_obj)
-        return persian.year, persian_month_name(persian.month), persian.day
-    except:
-        return None, None, None
-
-def get_current_persian_year():
-    """Get current Persian year"""
-    import jdatetime
-    return jdatetime.date.today().year
-
-# ============================================
 # HELPER FUNCTIONS
 # ============================================
 
 def get_db():
-    """Get database connection with row factory"""
-    conn = sqlite3.connect('house_bills.db')
+    """Get database connection with row factory and timeout"""
+    conn = sqlite3.connect('house_bills.db', timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -241,6 +194,21 @@ def get_user_debt(user_id):
         'balance': int(total_owed - verified_paid)
     }
 
+def create_notification_db(user_id, title, message, link=None):
+    """Create a notification for a user"""
+    conn = sqlite3.connect('house_bills.db', timeout=10)
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO notifications (user_id, title, message, link)
+        VALUES (?, ?, ?, ?)
+    ''', (user_id, title, message, link))
+    conn.commit()
+    conn.close()
+
+def create_notification(user_id, title, message, link=None):
+    """Wrapper for create_notification_db"""
+    create_notification_db(user_id, title, message, link)
+
 # ============================================
 # PAGE ROUTES
 # ============================================
@@ -273,8 +241,9 @@ def register():
     
     username = data.get('username')
     full_name = data.get('full_name')
+    phone_number = data.get('phone_number', '')
     email = data.get('email', '')
-    phone_number = data.get('phone_number')
+    room_area = data.get('room_area', 0)
     house_code = data.get('house_code', '').strip()
     role = data.get('role', 'regular')  # 'house_manager', 'housemate_manager', 'regular'
     password = data.get('password')
@@ -355,7 +324,7 @@ def register():
             room_area, is_admin, is_house_manager, is_housemate_manager,
             password, is_approved
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (house_id, username, full_name, email, phone_number, 0, 
+    ''', (house_id, username, full_name, email, phone_number, room_area, 
           is_admin, is_house_manager, is_housemate_manager, 
           hashed_password, is_approved))
     
@@ -955,6 +924,32 @@ def get_my_payments():
     
     return jsonify(payments)
 
+@app.route('/api/payments/user/<int:user_id>', methods=['GET'])
+@login_required
+def get_user_payments(user_id):
+    """Get payment history for a specific user (manager only)"""
+    # Check if user is manager
+    if not (session.get('is_house_manager') or session.get('is_housemate_manager') or session.get('is_admin')):
+        return jsonify({'error': 'دسترسی غیرمجاز'}), 403
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT p.id, p.amount_paid, p.payment_date, p.transaction_id, 
+               p.verification_status, p.notes, p.created_date,
+               u.full_name as user_name
+        FROM payments p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.user_id = ?
+        ORDER BY p.created_date DESC
+    ''', (user_id,))
+    
+    payments = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return jsonify(payments)
+
 @app.route('/api/payments/pending', methods=['GET'])
 @manager_required
 def get_pending_payments():
@@ -1141,83 +1136,452 @@ def resolve_objection(objection_id):
 # RECEIPT ROUTES
 # ============================================
 
-@app.route('/api/receipt/check', methods=['GET'])
+def get_persian_month_name(num):
+    """Get Persian month name from number"""
+    months = ['فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+              'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند']
+    return months[num - 1] if 1 <= num <= 12 else ''
+
+def get_verified_payments_for_month(user_id, month):
+    """Get total verified payments for a user in a specific month"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Since payments don't have bill_id, we check by payment_date
+    cursor.execute('''
+        SELECT SUM(amount_paid) as total
+        FROM payments
+        WHERE user_id = ? AND verification_status = 'verified'
+        AND strftime('%Y-%m', payment_date) = ?
+    ''', (user_id, month))
+    
+    result = cursor.fetchone()
+    conn.close()
+    return result['total'] if result and result['total'] else 0
+
+def calculate_monthly_share(user_id, month):
+    """Calculate total share for a user in a specific month"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT id FROM bills
+        WHERE house_id = (SELECT house_id FROM users WHERE id = ?) AND month = ?
+    ''', (user_id, month))
+    bills = cursor.fetchall()
+    
+    total_share = 0
+    for bill in bills:
+        share = calculate_user_share(user_id, bill['id'])
+        total_share += share
+    
+    conn.close()
+    return total_share
+
+@app.route('/api/receipt/status', methods=['GET'])
 @login_required
-def check_receipt_eligibility():
-    """Check if user is eligible for a receipt"""
-    month = request.args.get('month')
-    
-    if not month:
-        return jsonify({'error': 'ماه الزامی است'}), 400
-    
-    debt = get_user_debt(session['user_id'])
-    is_eligible = debt['balance'] <= 0
-    
-    return jsonify({
-        'eligible': is_eligible,
-        'month': month,
-        'balance': debt['balance']
-    })
+def get_receipt_status():
+    """Get receipt status for current user - SIMPLE OVERALL LOGIC"""
+    try:
+        user_id = session['user_id']
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Get all bills for this user's house
+        cursor.execute('''
+            SELECT id FROM bills 
+            WHERE house_id = (SELECT house_id FROM users WHERE id = ?)
+        ''', (user_id,))
+        bills = cursor.fetchall()
+        
+        if not bills:
+            conn.close()
+            return jsonify({
+                'can_generate': False,
+                'message': 'هیچ قبضی در سیستم ثبت نشده است'
+            })
+        
+        # Calculate TOTAL share (all bills, all time)
+        total_share = 0
+        for bill in bills:
+            share = calculate_user_share(user_id, bill['id'])
+            total_share += share
+        
+        # Calculate TOTAL paid (all verified payments, all time)
+        cursor.execute('''
+            SELECT SUM(amount_paid) as total
+            FROM payments
+            WHERE user_id = ? AND verification_status = 'verified'
+        ''', (user_id,))
+        total_paid = cursor.fetchone()['total'] or 0
+        
+        net_balance = total_paid - total_share
+        is_fully_paid = net_balance >= 0
+        
+        # Get last month with bills
+        cursor.execute('''
+            SELECT DISTINCT month FROM bills 
+            WHERE house_id = (SELECT house_id FROM users WHERE id = ?)
+            ORDER BY month DESC LIMIT 1
+        ''', (user_id,))
+        last_month = cursor.fetchone()
+        last_month_str = last_month['month'] if last_month else None
+        
+        # Parse last month for display
+        fully_paid_display = None
+        if last_month_str:
+            year, month_num = last_month_str.split('-')
+            persian_year = int(year) - 621
+            persian_month_name = get_persian_month_name(int(month_num))
+            fully_paid_display = {
+                'month': last_month_str,
+                'persian_month': persian_month_name,
+                'persian_year': persian_year
+            }
+        
+        # Determine status
+        if net_balance > 0:
+            status = 'بستانکار'
+            status_icon = '💰'
+            status_color = 'var(--success)'
+        elif net_balance == 0:
+            status = 'تسویه کامل'
+            status_icon = '✅'
+            status_color = 'var(--success)'
+        else:
+            status = 'بدهکار'
+            status_icon = '⚠️'
+            status_color = 'var(--danger)'
+        
+        # Can generate receipt if net_balance >= 0
+        can_generate = net_balance >= 0
+        
+        # Get current month bills for display
+        current_month = last_month_str
+        current_month_data = None
+        if current_month:
+            year, month_num = current_month.split('-')
+            persian_year = int(year) - 621
+            persian_month_name = get_persian_month_name(int(month_num))
+            
+            cursor.execute('''
+                SELECT id, utility_type, total_amount, division_method
+                FROM bills
+                WHERE month = ? AND house_id = (SELECT house_id FROM users WHERE id = ?)
+            ''', (current_month, user_id))
+            bills = cursor.fetchall()
+            
+            current_bills = []
+            total_share_current = 0
+            for bill in bills:
+                share = calculate_user_share(user_id, bill['id'])
+                total_share_current += share
+                current_bills.append({
+                    'utility_type': bill['utility_type'],
+                    'total_amount': bill['total_amount'],
+                    'division_method': bill['division_method'],
+                    'user_share': share
+                })
+            
+            verified_paid = get_verified_payments_for_month(user_id, current_month)
+            
+            # FIX: If user is fully paid overall, set balance to 0
+            # Otherwise, calculate actual balance for the month
+            if is_fully_paid:
+                balance = 0
+            else:
+                balance = total_share_current - verified_paid
+            
+            current_month_data = {
+                'month': current_month,
+                'persian_month': persian_month_name,
+                'persian_year': persian_year,
+                'bills': current_bills,
+                'total_share': total_share_current,
+                'verified_paid': verified_paid,
+                'balance': balance
+            }
+        
+        conn.close()
+        
+        result = {
+            'can_generate': can_generate,
+            'is_fully_paid': is_fully_paid,
+            'net_balance': net_balance,
+            'cumulative_share': total_share,
+            'cumulative_paid': total_paid,
+            'status': status,
+            'status_icon': status_icon,
+            'status_color': status_color,
+            'fully_paid_until': fully_paid_display,
+            'current_month': current_month_data,
+            'message': None if can_generate else 'برای دریافت رسید، ابتدا باید تمام قبض‌ها را پرداخت کنید'
+        }
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"ERROR in get_receipt_status: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e), 'can_generate': False}), 500
 
 @app.route('/api/receipt/generate', methods=['POST'])
 @login_required
 def generate_receipt():
-    """Generate a receipt for a specific month"""
-    data = request.json
-    month = data.get('month')
-    
-    if not month:
-        return jsonify({'error': 'ماه الزامی است'}), 400
-    
-    debt = get_user_debt(session['user_id'])
-    
-    if debt['balance'] > 0:
-        return jsonify({'error': f'امکان دریافت رسید وجود ندارد. موجودی شما: {debt["balance"]:,} تومان'}), 400
-    
-    conn = get_db()
-    cursor = conn.cursor()
-    
-    # Check if receipt already exists
-    cursor.execute('SELECT id FROM receipts WHERE user_id = ? AND month = ?', 
-                   (session['user_id'], month))
-    if cursor.fetchone():
+    """Generate a receipt for current user - SIMPLE OVERALL LOGIC"""
+    try:
+        user_id = session['user_id']
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Get user info
+        cursor.execute('SELECT full_name FROM users WHERE id = ?', (user_id,))
+        user = cursor.fetchone()
+        if not user:
+            conn.close()
+            return jsonify({'error': 'کاربر یافت نشد'}), 404
+        
+        # Get house code
+        cursor.execute('''
+            SELECT h.house_code FROM houses h
+            JOIN users u ON u.house_id = h.id
+            WHERE u.id = ?
+        ''', (user_id,))
+        house = cursor.fetchone()
+        house_code = house['house_code'] if house else 'NONE'
+        
+        # Calculate TOTAL share (all bills, all time)
+        cursor.execute('''
+            SELECT id FROM bills 
+            WHERE house_id = (SELECT house_id FROM users WHERE id = ?)
+        ''', (user_id,))
+        bills = cursor.fetchall()
+        
+        total_share = 0
+        for bill in bills:
+            share = calculate_user_share(user_id, bill['id'])
+            total_share += share
+        
+        # Calculate TOTAL paid (all verified payments)
+        cursor.execute('''
+            SELECT SUM(amount_paid) as total
+            FROM payments
+            WHERE user_id = ? AND verification_status = 'verified'
+        ''', (user_id,))
+        total_paid = cursor.fetchone()['total'] or 0
+        
+        net_balance = total_paid - total_share
+        
+        if net_balance < 0:
+            conn.close()
+            return jsonify({'error': 'امکان صدور رسید وجود ندارد. شما هنوز بدهکار هستید.'}), 400
+        
+        # Generate receipt number
+        now = datetime.now()
+        receipt_number = f"REC-{house_code}-{now.strftime('%Y%m%d%H%M%S')}-{user_id}"
+        
+        # Build receipt HTML
+        if net_balance > 0:
+            status_text = f"✅ تسویه کامل و بستانکار: {int(net_balance):,} تومان"
+            status_class = 'paid'
+        else:
+            status_text = "✅ تسویه کامل"
+            status_class = 'paid'
+        
+        fully_paid_text = "تا پایان "
+        # Get last month
+        cursor.execute('''
+            SELECT DISTINCT month FROM bills 
+            WHERE house_id = (SELECT house_id FROM users WHERE id = ?)
+            ORDER BY month DESC LIMIT 1
+        ''', (user_id,))
+        last_month = cursor.fetchone()
+        if last_month:
+            year, month_num = last_month['month'].split('-')
+            persian_year = int(year) - 621
+            persian_month_name = get_persian_month_name(int(month_num))
+            fully_paid_text += f"{persian_month_name} {persian_year}"
+        else:
+            fully_paid_text = "هیچ ماهی"
+        
+        # Get current month data for display
+        current_month = last_month['month'] if last_month else None
+        current_month_data = None
+        if current_month:
+            cursor.execute('''
+                SELECT id, utility_type, total_amount, division_method
+                FROM bills
+                WHERE month = ? AND house_id = (SELECT house_id FROM users WHERE id = ?)
+            ''', (current_month, user_id))
+            bills = cursor.fetchall()
+            
+            current_bills = []
+            total_share_current = 0
+            for bill in bills:
+                share = calculate_user_share(user_id, bill['id'])
+                total_share_current += share
+                current_bills.append({
+                    'utility_type': bill['utility_type'],
+                    'total_amount': bill['total_amount'],
+                    'division_method': bill['division_method'],
+                    'user_share': share
+                })
+            
+            verified_paid = get_verified_payments_for_month(user_id, current_month)
+            balance = total_share_current - verified_paid
+            
+            year, month_num = current_month.split('-')
+            persian_year = int(year) - 621
+            persian_month_name = get_persian_month_name(int(month_num))
+            
+            current_month_data = {
+                'month': current_month,
+                'persian_month': persian_month_name,
+                'persian_year': persian_year,
+                'bills': current_bills,
+                'total_share': total_share_current,
+                'verified_paid': verified_paid,
+                'balance': balance
+            }
+        
+        bills_html = ''
+        if current_month_data and current_month_data.get('bills'):
+            for bill in current_month_data['bills']:
+                type_map = {
+                    'rent': '🏠 اجاره',
+                    'electricity': '🔌 برق',
+                    'water': '💧 آب',
+                    'gas': '🔥 گاز',
+                    'internet': '🌐 اینترنت'
+                }
+                method_map = {
+                    'equal': 'مساوی',
+                    'area': 'متراژ',
+                    'presence': 'حضور',
+                    'combined': 'متراژ × حضور'
+                }
+                bills_html += f"""
+                <tr>
+                    <td>{type_map.get(bill['utility_type'], bill['utility_type'])}</td>
+                    <td>{int(bill['total_amount']):,} تومان</td>
+                    <td>{method_map.get(bill['division_method'], bill['division_method'])}</td>
+                    <td><strong>{int(bill['user_share']):,} تومان</strong></td>
+                </tr>
+                """
+        
+        current_month_name = f"{current_month_data['persian_month']} {current_month_data['persian_year']}" if current_month_data else '-'
+        current_share = int(current_month_data['total_share']) if current_month_data else 0
+        current_paid = int(current_month_data['verified_paid']) if current_month_data else 0
+        current_balance = int(current_month_data['balance']) if current_month_data else 0
+        
+        receipt_html = f"""
+        <div class="receipt-container">
+            <div class="receipt-inner">
+                <div class="receipt-header">
+                    <h2>🏠 رسید تسویه حساب</h2>
+                    <div class="receipt-number">شماره: {receipt_number}</div>
+                    <div class="receipt-house-code">🏢 {house_code}</div>
+                </div>
+                
+                <div class="receipt-user-info">
+                    <div>
+                        <div class="label">نام پرداخت‌کننده</div>
+                        <div class="value">{user['full_name']}</div>
+                    </div>
+                    <div>
+                        <div class="label">تاریخ صدور</div>
+                        <div class="value">{now.strftime('%Y/%m/%d %H:%M')}</div>
+                    </div>
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <span class="receipt-status-badge {status_class}">{status_text}</span>
+                    <div style="margin-top: 8px; font-size: 14px; color: var(--text-muted);">
+                        📅 آخرین ماه دارای قبض: {fully_paid_text}
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px 0;">📋 قبض‌های ماه جاری: {current_month_name}</h4>
+                <div class="table-responsive">
+                    <table class="receipt-bills-table">
+                        <thead>
+                            <tr><th>نوع قبض</th><th>مبلغ کل</th><th>روش تقسیم</th><th>سهم شما</th></tr>
+                        </thead>
+                        <tbody>
+                            {bills_html}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="receipt-summary">
+                    <div class="receipt-summary-item">
+                        <span class="label">💰 سهم شما در ماه جاری</span>
+                        <span class="value neutral">{current_share:,} تومان</span>
+                    </div>
+                    <div class="receipt-summary-item">
+                        <span class="label">💳 پرداخت شده در ماه جاری</span>
+                        <span class="value positive">{current_paid:,} تومان</span>
+                    </div>
+                    <div class="receipt-summary-item">
+                        <span class="label">⚠️ مانده ماه جاری</span>
+                        <span class="value {'positive' if current_balance == 0 else 'negative'}">{current_balance:,} تومان</span>
+                    </div>
+                </div>
+                
+                <div style="margin: 15px 0; padding: 12px 16px; background: var(--bg-primary); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted);">مجموع سهم از ابتدا</div>
+                            <div style="font-size: 18px; font-weight: 700;">{int(total_share):,} تومان</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted);">مجموع پرداخت از ابتدا</div>
+                            <div style="font-size: 18px; font-weight: 700; color: var(--success);">{int(total_paid):,} تومان</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--text-muted);">مانده کلی</div>
+                            <div style="font-size: 18px; font-weight: 700; color: { 'var(--success)' if net_balance >= 0 else 'var(--danger)' };">
+                                {int(net_balance):,} تومان { ' (بستانکار)' if net_balance > 0 else '' }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="receipt-footer">
+                    این رسید به صورت خودکار توسط سیستم تقسیم هوشمند قبض صادر شده است.
+                </div>
+                
+                <div class="receipt-actions">
+                    <button onclick="printReceipt()" style="padding: 10px 24px; background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end)); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                        🖨️ چاپ / PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+        """
+        
+        # Save receipt to database
+        month_to_save = current_month if current_month else 'all'
+        cursor.execute('''
+            INSERT INTO receipts (user_id, month, receipt_number, total_paid, receipt_text)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, month_to_save, receipt_number, total_paid, receipt_html))
+        
+        conn.commit()
         conn.close()
-        return jsonify({'error': 'رسید قبلاً صادر شده است'}), 400
-    
-    receipt_number = f"REC-{month}-{session['user_id']}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    
-    receipt_text = f"""
-═══════════════════════════════════════════
-            رسید پرداخت ماهانه
-═══════════════════════════════════════════
-
-شماره رسید: {receipt_number}
-تاریخ صدور: {datetime.now().strftime('%Y/%m/%d %H:%M')}
-
-نام پرداخت‌کننده: {session['full_name']}
-ماه صورت‌حساب: {month}
-
-مبلغ کل پرداختی: {debt['verified_paid']:,} تومان
-
-وضعیت: ✅ تسویه کامل
-
-═══════════════════════════════════════════
-"""
-    
-    cursor.execute('''
-        INSERT INTO receipts (user_id, month, receipt_number, total_paid, receipt_text)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (session['user_id'], month, receipt_number, debt['verified_paid'], receipt_text))
-    
-    conn.commit()
-    conn.close()
-    
-    return jsonify({
-        'success': True,
-        'receipt_number': receipt_number,
-        'receipt_text': receipt_text,
-        'total_paid': debt['verified_paid']
-    })
+        
+        return jsonify({
+            'success': True,
+            'receipt_number': receipt_number,
+            'receipt_html': receipt_html
+        })
+        
+    except Exception as e:
+        print(f"ERROR in generate_receipt: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/receipts/my', methods=['GET'])
 @login_required
@@ -1239,23 +1603,8 @@ def get_my_receipts():
     return jsonify(receipts)
 
 # ============================================
-# NOTIFICATION HELPER FUNCTIONS
+# NOTIFICATION ROUTES
 # ============================================
-
-def create_notification_db(user_id, title, message, link=None):
-    """Create a notification for a user"""
-    conn = sqlite3.connect('house_bills.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO notifications (user_id, title, message, link)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, title, message, link))
-    conn.commit()
-    conn.close()
-
-def create_notification(user_id, title, message, link=None):
-    """Wrapper for create_notification_db"""
-    create_notification_db(user_id, title, message, link)
 
 @app.route('/api/notifications', methods=['GET'])
 @login_required
@@ -1296,6 +1645,40 @@ def mark_notification_read(notification_id):
     return jsonify({'success': True})
 
 # ============================================
+# FORGOT PASSWORD ROUTE
+# ============================================
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    """Reset password using phone number (demo - code is always 12345)"""
+    data = request.json
+    phone_number = data.get('phone_number')
+    new_password = data.get('new_password')
+    
+    if not phone_number or not new_password:
+        return jsonify({'error': 'شماره موبایل و رمز عبور جدید الزامی است'}), 400
+    
+    if len(new_password) < 4:
+        return jsonify({'error': 'رمز عبور باید حداقل ۴ کاراکتر باشد'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute('SELECT username FROM users WHERE phone_number = ?', (phone_number,))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        return jsonify({'error': 'شماره موبایل یافت نشد'}), 404
+    
+    hashed_password = hash_password(new_password)
+    cursor.execute('UPDATE users SET password = ? WHERE phone_number = ?', (hashed_password, phone_number))
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'username': user['username']})
+
+# ============================================
 # DEBUG ROUTES
 # ============================================
 
@@ -1304,6 +1687,102 @@ def mark_notification_read(notification_id):
 def debug_session():
     """Debug endpoint to see session data"""
     return jsonify(dict(session))
+
+# ============================================
+# ADMIN ATTENDANCE ROUTE
+# ============================================
+
+@app.route('/api/admin/attendance/<int:user_id>', methods=['PUT'])
+@manager_required
+def admin_update_attendance(user_id):
+    """Admin can update any user's attendance for a month"""
+    data = request.json
+    month = data.get('month')
+    days_present = data.get('days_present')
+    
+    if not month:
+        return jsonify({'error': 'ماه الزامی است'}), 400
+    
+    if days_present is None or days_present < 0 or days_present > 31:
+        return jsonify({'error': 'تعداد روزهای حضور باید بین ۰ تا ۳۱ باشد'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Verify user belongs to this apartment
+    cursor.execute('SELECT id FROM users WHERE id = ? AND house_id = ?', 
+                   (user_id, session.get('admin_house_id') or session.get('house_id')))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'کاربر یافت نشد'}), 404
+    
+    cursor.execute('''
+        INSERT OR REPLACE INTO attendance (user_id, month, days_present)
+        VALUES (?, ?, ?)
+    ''', (user_id, month, days_present))
+    
+    conn.commit()
+    conn.close()
+    
+    # Create notification for the user
+    create_notification(user_id, '📅 حضور شما ویرایش شد', 'روزهای حضور شما توسط مدیر خانه تغییر پیدا کرد', '/dashboard?tab=attendance')
+    
+    return jsonify({'success': True})
+
+# ============================================
+# ADMIN USER ROUTES
+# ============================================
+
+@app.route('/api/admin/users', methods=['POST'])
+@manager_required
+def admin_add_user():
+    """Add a new user directly (manager only)"""
+    data = request.json
+    
+    username = data.get('username')
+    full_name = data.get('full_name')
+    phone_number = data.get('phone_number')
+    room_area = data.get('room_area')
+    password = data.get('password', '1234')
+    
+    if not all([username, full_name, phone_number, room_area]):
+        return jsonify({'error': 'تمام فیلدهای الزامی را پر کنید'}), 400
+    
+    # Validate phone number
+    if not phone_number.isdigit() or len(phone_number) != 10:
+        return jsonify({'error': 'شماره موبایل باید ۱۰ رقم باشد'}), 400
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Check if username exists
+    cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'این نام کاربری قبلاً ثبت شده است'}), 400
+    
+    # Check if phone number exists
+    cursor.execute('SELECT id FROM users WHERE phone_number = ?', (phone_number,))
+    if cursor.fetchone():
+        conn.close()
+        return jsonify({'error': 'این شماره موبایل قبلاً ثبت شده است'}), 400
+    
+    hashed_password = hash_password(password)
+    house_id = session.get('admin_house_id') or session.get('house_id')
+    
+    cursor.execute('''
+        INSERT INTO users (
+            house_id, username, full_name, phone_number,
+            room_area, is_admin, is_house_manager, is_housemate_manager,
+            password, is_approved
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (house_id, username, full_name, phone_number, room_area,
+          0, 0, 0, hashed_password, 1))
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'user_id': cursor.lastrowid})
 
 
 if __name__ == '__main__':

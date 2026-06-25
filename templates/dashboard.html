@@ -72,7 +72,7 @@
                 <div id="billsList">در حال بارگذاری...</div>
             </div>
 
-            <!-- Add Bill Form (Only for Managers) -->
+            <!-- Add Bill Form -->
             {% if is_house_manager or is_housemate_manager or is_admin %}
             <div class="card">
                 <h3>➕ ثبت قبض جدید</h3>
@@ -95,7 +95,6 @@
                         <label>تاریخ قبض</label>
                         <div style="display: flex; gap: 10px;">
                             <select id="newBillYear" style="flex: 1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
-                                <!-- Years populated by JavaScript -->
                             </select>
                             <select id="newBillMonth" style="flex: 1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
                                 <option value="1">فروردین</option>
@@ -130,52 +129,234 @@
         </div>
 
         <!-- ============================================ -->
-        <!-- TAB 2: ATTENDANCE (Coming Soon) -->
+        <!-- TAB 2: ATTENDANCE -->
         <!-- ============================================ -->
         <div id="panel-attendance" class="panel">
             <div class="card">
                 <h3>📅 حضور من</h3>
-                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>انتخاب ماه</label>
+                        <select id="attendanceMonthSelect" onchange="loadMyAttendance()" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>تعداد روزهای حضور (۱ تا ۳۱)</label>
+                        <input type="number" id="attendanceDays" min="1" max="31" placeholder="تعداد روز" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <button onclick="saveAttendance()" style="margin-top: 5px;">ذخیره حضور</button>
+                <div id="attendanceMessage" class="message"></div>
             </div>
+
+            <!-- My Attendance History -->
+            <div class="card">
+                <h3>📋 تاریخچه حضور من</h3>
+                <div id="myAttendanceList">در حال بارگذاری...</div>
+            </div>
+
+            <!-- All Housemates Attendance (Everyone sees this) -->
+            <div class="card">
+                <h3>👥 حضور همه همخانه‌ ها</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>انتخاب ماه</label>
+                        <select id="allAttendanceMonthSelect" onchange="loadAllAttendance()" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                        </select>
+                    </div>
+                </div>
+                <div id="allAttendanceList">در حال بارگذاری...</div>
+            </div>
+
+            <!-- Manager: Edit Other Users' Attendance -->
+            {% if is_house_manager or is_housemate_manager or is_admin %}
+            <div class="card">
+                <h3>✏️ ویرایش حضور همخانه‌ ها (مدیر)</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>انتخاب کاربر</label>
+                        <select id="editAttendanceUser" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ماه</label>
+                        <select id="editAttendanceMonth" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>روزهای حضور</label>
+                        <input type="number" id="editAttendanceDays" min="1" max="31" placeholder="تعداد روز" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <button onclick="editAttendance()" style="margin-top: 5px;">ذخیره تغییرات</button>
+                <div id="editAttendanceMessage" class="message"></div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- ============================================ -->
-        <!-- TAB 3: HOUSEMATES (Coming Soon) -->
+        <!-- TAB 3: HOUSEMATES -->
         <!-- ============================================ -->
         <div id="panel-housemates" class="panel">
             <div class="card">
-                <h3>👥 همخانه‌ ها</h3>
-                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+                <h3>👥 لیست همخانه‌ ها</h3>
+                <div id="housematesList">در حال بارگذاری...</div>
             </div>
+
+            <!-- Pending Approvals (Manager only) -->
+            {% if is_house_manager or is_housemate_manager or is_admin %}
+            <div class="card">
+                <h3>⏳ درخواست‌های عضویت</h3>
+                <div id="pendingUsersList">در حال بارگذاری...</div>
+            </div>
+            {% endif %}
+
+            <!-- Add User (Manager only) -->
+            {% if is_house_manager or is_housemate_manager or is_admin %}
+            <div class="card">
+                <h3>➕ اضافه کردن همخانه جدید</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نام کاربری (انگلیسی) <span class="required">*</span></label>
+                        <input type="text" id="newUserUsername" placeholder="مثال: newuser" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label>نام کامل <span class="required">*</span></label>
+                        <input type="text" id="newUserFullName" placeholder="مثال: علی محمدی" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label>شماره موبایل <span class="required">*</span></label>
+                        <input type="tel" id="newUserPhone" placeholder="مثال: 9123456789" maxlength="10" oninput="cleanPhoneNumberDashboard(this)" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label>متراژ اتاق <span class="required">*</span></label>
+                        <input type="number" id="newUserArea" placeholder="مثال: 20" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <button onclick="addHousemate()">اضافه کردن همخانه</button>
+                <div id="addUserMessage" class="message"></div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- ============================================ -->
-        <!-- TAB 4: PAYMENTS (Coming Soon) -->
+        <!-- TAB 4: PAYMENTS -->
         <!-- ============================================ -->
         <div id="panel-payments" class="panel">
+            <!-- Manager: Pending Payments (Top) -->
+            {% if is_house_manager or is_housemate_manager or is_admin %}
             <div class="card">
-                <h3>💰 پرداخت‌ ها</h3>
-                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+                <h3>✅ تأیید پرداخت‌های منتظر</h3>
+                <div id="pendingPaymentsList">در حال بارگذاری...</div>
+            </div>
+            {% endif %}
+
+            <!-- Register Payment (Everyone) -->
+            <div class="card">
+                <h3>💰 ثبت پرداخت جدید</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>مبلغ (تومان) <span class="required">*</span></label>
+                        <input type="number" id="paymentAmount" placeholder="مبلغ پرداختی" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label>تاریخ پرداخت <span class="required">*</span></label>
+                        <div style="display: flex; gap: 10px;">
+                            <select id="paymentDay" style="flex:1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                                <!-- 1-31 populated by JS -->
+                            </select>
+                            <select id="paymentMonth" style="flex:1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                                <option value="1">فروردین</option>
+                                <option value="2">اردیبهشت</option>
+                                <option value="3">خرداد</option>
+                                <option value="4">تیر</option>
+                                <option value="5">مرداد</option>
+                                <option value="6">شهریور</option>
+                                <option value="7">مهر</option>
+                                <option value="8">آبان</option>
+                                <option value="9">آذر</option>
+                                <option value="10">دی</option>
+                                <option value="11">بهمن</option>
+                                <option value="12">اسفند</option>
+                            </select>
+                            <select id="paymentYear" style="flex:1; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px;">
+                                <!-- Years populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>شماره تراکنش (اختیاری)</label>
+                        <input type="text" id="paymentTransaction" placeholder="شماره پیگیری" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                    <div class="form-group">
+                        <label>توضیحات (اختیاری)</label>
+                        <input type="text" id="paymentNotes" placeholder="توضیحات" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                    </div>
+                </div>
+                <button onclick="registerPayment()">ثبت پرداخت</button>
+                <div id="paymentMessage" class="message"></div>
+            </div>
+
+            <!-- Payment History (Everyone) -->
+            <div class="card">
+                <h3>📜 تاریخچه پرداخت‌ها</h3>
+                
+                <!-- User Selector (Only for Managers) -->
+                {% if is_house_manager or is_housemate_manager or is_admin %}
+                <div class="form-row" style="margin-bottom: 15px;">
+                    <div class="form-group">
+                        <label>انتخاب کاربر</label>
+                        <select id="paymentHistoryUser" onchange="loadPaymentHistory()" style="padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-family: 'Shabnam', sans-serif; font-size: 14px; width: 100%;">
+                            <!-- Populated by JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div id="paymentHistoryList">در حال بارگذاری...</div>
             </div>
         </div>
 
         <!-- ============================================ -->
-        <!-- TAB 5: DEBT (Coming Soon) -->
+        <!-- TAB 5: DEBT -->
         <!-- ============================================ -->
         <div id="panel-debt" class="panel">
             <div class="card">
-                <h3>📊 بدهی</h3>
-                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+                <h3>📊 وضعیت بدهی همه</h3>
+                <div id="allDebtList">در حال بارگذاری...</div>
             </div>
         </div>
 
         <!-- ============================================ -->
-        <!-- TAB 6: RECEIPTS (Coming Soon) -->
+        <!-- TAB 6: RECEIPTS -->
         <!-- ============================================ -->
         <div id="panel-receipts" class="panel">
+            <!-- Receipt Status Card -->
             <div class="card">
-                <h3>📄 رسید</h3>
-                <p style="color: var(--text-muted); text-align: center; padding: 20px 0;">در حال توسعه...</p>
+                <h3>📄 وضعیت تسویه و دریافت رسید</h3>
+                
+                <div id="receiptStatus">
+                    <div class="receipt-status-loading">در حال بررسی...</div>
+                </div>
+                
+                <div id="receiptActions" style="margin-top: 20px; display: none;">
+                    <button id="generateReceiptBtn" class="btn-primary" onclick="generateReceipt()" style="width: auto; padding: 12px 32px;">
+                        📄 دریافت رسید
+                    </button>
+                    <span id="receiptStatusMessage" style="margin-right: 15px; font-size: 14px;"></span>
+                </div>
+                
+                <div id="receiptResult" class="receipt-container" style="display: none; margin-top: 20px;">
+                    <!-- Receipt will be injected here -->
+                </div>
+            </div>
+
+            <!-- Receipt History -->
+            <div class="card">
+                <h3>📋 رسیدهای صادر شده</h3>
+                <div id="receiptsList">در حال بارگذاری...</div>
             </div>
         </div>
 

@@ -238,6 +238,213 @@ body.dark-mode .bills-table tbody tr:nth-child(even):hover {
 }
 
 /* ============================================
+   RECEIPT STYLES
+   ============================================ */
+
+.receipt-status-loading {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+}
+
+.receipt-container {
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0;
+    max-width: 700px;
+    margin: 0 auto;
+    direction: ltr;
+}
+
+.receipt-inner {
+    direction: rtl;
+    padding: 30px 35px;
+    font-family: 'Shabnam', 'Tahoma', sans-serif;
+}
+
+.receipt-header {
+    text-align: center;
+    border-bottom: 3px double var(--gradient-start);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.receipt-header h2 {
+    font-size: 22px;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.receipt-header .receipt-number {
+    font-size: 13px;
+    color: var(--text-muted);
+    direction: ltr;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+.receipt-house-code {
+    background: var(--gradient-start);
+    color: white;
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    display: inline-block;
+    margin-top: 5px;
+}
+
+.receipt-user-info {
+    display: flex;
+    justify-content: space-between;
+    background: var(--bg-primary);
+    padding: 12px 18px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.receipt-user-info .label {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.receipt-user-info .value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.receipt-status-badge {
+    display: inline-block;
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.receipt-status-badge.paid {
+    background: var(--success-light);
+    color: var(--success);
+}
+
+.receipt-status-badge.partial {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.receipt-status-badge.unpaid {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+
+.receipt-bills-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    font-size: 14px;
+}
+
+.receipt-bills-table th {
+    background: var(--bg-primary);
+    padding: 10px 12px;
+    text-align: right;
+    font-weight: 600;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.receipt-bills-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.receipt-bills-table tr:last-child td {
+    border-bottom: none;
+}
+
+.receipt-summary {
+    background: var(--bg-primary);
+    padding: 16px 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.receipt-summary-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.receipt-summary-item .label {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.receipt-summary-item .value {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.receipt-summary-item .value.positive {
+    color: var(--success);
+}
+
+.receipt-summary-item .value.negative {
+    color: var(--danger);
+}
+
+.receipt-summary-item .value.neutral {
+    color: var(--warning);
+}
+
+.receipt-footer {
+    text-align: center;
+    border-top: 2px solid var(--border-color);
+    padding-top: 15px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.receipt-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Print styles for receipt */
+@media print {
+    .header, .tabs, .logout-btn, .theme-toggle, .card h3, #receiptActions, .receipt-actions {
+        display: none !important;
+    }
+    .receipt-container {
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+        padding: 20px !important;
+    }
+    body {
+        background: white !important;
+    }
+    .card {
+        box-shadow: none !important;
+        border: none !important;
+        background: white !important;
+    }
+    .receipt-inner {
+        padding: 20px !important;
+    }
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 768px) {
@@ -283,5 +490,17 @@ body.dark-mode .bills-table tbody tr:nth-child(even):hover {
     .bills-table tbody td {
         padding: 10px 12px;
         font-size: 12px;
+    }
+
+    .receipt-inner {
+        padding: 16px;
+    }
+
+    .receipt-user-info {
+        flex-direction: column;
+    }
+
+    .receipt-summary {
+        flex-direction: column;
     }
 }
